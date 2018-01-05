@@ -1463,6 +1463,12 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
 {
     LogPrintf("REORGANIZE\n");
 
+    if (abs(pindexNew->nHeight - pindexBest->nHeight) > GetArg("-reorglimit", 6))
+    {
+        LogPrintf("REORGANIZE: skip, too long\n");
+        return false;
+    }
+
     // Find the fork
     CBlockIndex* pfork = pindexBest;
     CBlockIndex* plonger = pindexNew;
@@ -1475,6 +1481,12 @@ bool static Reorganize(CTxDB& txdb, CBlockIndex* pindexNew)
             break;
         if (!(pfork = pfork->pprev))
             return error("Reorganize() : pfork->pprev is null");
+    }
+
+    if (abs(pindexBest->nHeight - pfork->nHeight) > GetArg("-reorgdisconnectlimit", 12))
+    {
+        LogPrintf("REORGANIZE: skip, too big\n");
+        return false;
     }
 
     // List of what to disconnect
